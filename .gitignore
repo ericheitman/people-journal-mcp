@@ -1,0 +1,14 @@
+bin/
+obj/
+.vs/
+*.user
+sample-journal/*/journal.backup.json
+.DS_Store
+
+
+# The committed sample journal is fictional demo data. Anything the server writes at runtime
+# (new entries, other users' folders) stays local so real notes never get committed.
+# Files already tracked stay tracked.
+sample-journal/*
+!sample-journal/local-dev/
+sample-journal/*/entries/

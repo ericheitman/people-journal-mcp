@@ -1,0 +1,107 @@
+{
+  "me": {
+    "startDate": "2026-09-14",
+    "title": "Engineering Manager",
+    "company": "Example Co",
+    "focus": [
+      "Speak in business impact, not technical detail",
+      "Listen and learn before proposing solutions"
+    ]
+  },
+  "people": [
+    {
+      "id": "dana-whitfield",
+      "name": "Dana Whitfield",
+      "title": "CFO",
+      "relationship": "exec",
+      "keyPerson": true,
+      "caresAbout": "",
+      "frustrations": "",
+      "howTheyLikeInfo": "Numbers first, story second",
+      "successForMe": ""
+    },
+    {
+      "id": "marcus-lee",
+      "name": "Marcus Lee",
+      "title": "VP Operations",
+      "relationship": "exec",
+      "keyPerson": true,
+      "caresAbout": "",
+      "frustrations": "",
+      "howTheyLikeInfo": "Weekly status note",
+      "successForMe": ""
+    },
+    {
+      "id": "priya-nair",
+      "name": "Priya Nair",
+      "title": "Integration Lead",
+      "relationship": "direct",
+      "keyPerson": false,
+      "caresAbout": "",
+      "frustrations": "",
+      "howTheyLikeInfo": "",
+      "successForMe": ""
+    }
+  ],
+  "entries": [
+    {
+      "id": "e-20260915-1",
+      "date": "2026-09-15",
+      "type": "reflection",
+      "people": [],
+      "text": "First week listening tour\n\nMet with eight people this week. Common theme: integrations break quietly and nobody owns the fix end to end. Resist the urge to propose solutions before the 30-day mark.",
+      "processed": true
+    },
+    {
+      "id": "e-20260922-1",
+      "date": "2026-09-22",
+      "type": "meeting",
+      "people": [
+        "dana-whitfield"
+      ],
+      "text": "Budget 1:1 with the CFO\n\nDana wants a one-page view of integration spend before Q1 planning. She prefers numbers first, story second. I committed to sending a draft by October 10.",
+      "tag": "business",
+      "processed": true
+    },
+    {
+      "id": "e-20260924-1",
+      "date": "2026-09-24",
+      "type": "meeting",
+      "people": [
+        "marcus-lee",
+        "priya-nair"
+      ],
+      "text": "Own the HR system sync failures\n\nPayroll-to-HR sync failed twice this month. Decided my team takes ownership of monitoring and alerting; Priya will draft the runbook. Marcus asked for a weekly status note until it's stable.",
+      "tag": "tech",
+      "processed": true
+    },
+    {
+      "id": "e-20260925-1",
+      "date": "2026-09-25",
+      "type": "learning",
+      "people": [
+        "priya-nair"
+      ],
+      "text": "Lunch-and-learn - intro to MCP\n\nDemoed this journal server. The moment that landed: Claude chaining a search and a get without being told to. Question that came up: how does the server know who I am? Good lead-in for the auth session.",
+      "processed": true
+    }
+  ],
+  "commitments": [
+    {
+      "id": "c1",
+      "text": "Send one-page integration spend draft",
+      "person": "dana-whitfield",
+      "direction": "i-owe",
+      "due": "2026-10-10",
+      "done": false
+    }
+  ],
+  "goals": [
+    {
+      "id": "g1",
+      "phase": "30",
+      "title": "Meet every key stakeholder",
+      "status": "doing"
+    }
+  ]
+}

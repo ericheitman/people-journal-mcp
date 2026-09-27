@@ -1,0 +1,7 @@
+{
+  "name": "people-journal-mcp",
+  "description": "Slash commands for the People Journal MCP server. Needs the server registered as 'people-journal' (see the repo README).",
+  "author": {
+    "name": "Eric Heitman"
+  }
+}

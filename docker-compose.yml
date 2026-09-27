@@ -1,0 +1,22 @@
+services:
+  people-journal:
+    build: .
+    # Comes back after a reboot or Docker restart, with the same JOURNAL_PATH/MCP_PORT it was started with.
+    restart: unless-stopped
+    ports:
+      # Bound to localhost only: with Auth:Mode=None there is no sign-in,
+      # so this must never be reachable from the network.
+      # 5191 sits next to a companion journal UI (5190). MCP_PORT overrides it.
+      - "127.0.0.1:${MCP_PORT:-5191}:5191"
+      # Also the IPv6 loopback: some clients resolve "localhost" to ::1 first.
+      - "[::1]:${MCP_PORT:-5191}:5191"
+    environment:
+      Auth__Mode: None
+      Auth__DevUserId: local-dev
+      # Json: a companion UI's single journal.json (the UI and its slash commands write the same file).
+      Journal__Store: Json
+    volumes:
+      # Demos use the fictional sample journal by default.
+      # For your own journal, mount the folder holding journal.json as the local user:
+      #   JOURNAL_PATH=~/my-journal-data docker compose up -d
+      - ${JOURNAL_PATH:-./sample-journal/local-dev}:/data/journal/local-dev
