@@ -36,7 +36,7 @@ The MCP endpoint is `http://127.0.0.1:5191/mcp`.
   ```
 - **Claude on the web**: needs a public HTTPS URL and Entra ID sign-in. See step 5.
 
-Try: "What have I discussed with the CFO?" or "Log a reflection: today I learned..."
+Try: "What have I discussed with the CFO?", "Who is Dana, and what do I owe the CFO?" or "Log a reflection: today I learned..."
 
 ## Tools
 
@@ -45,6 +45,7 @@ Try: "What have I discussed with the CFO?" or "Log a reflection: today I learned
 | `journal_add_entry` | Saves a new entry (1on1, meeting, learning, decision, reflection, teaching) |
 | `journal_search_entries` | Filters by text, person (partial match), type, tag, date; newest first |
 | `journal_get_entry` | Returns one entry's full text |
+| `journal_get_people` | Without a name, lists everyone with a one-line summary. With a name (partial, or a title like `CFO`), returns their full record: notes, open commitments, pasted LinkedIn background and latest entries. The markdown store only knows names from entries, so it returns names, last entry and entry count |
 
 ## How identity works
 

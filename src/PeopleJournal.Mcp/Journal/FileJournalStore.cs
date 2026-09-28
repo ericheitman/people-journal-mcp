@@ -96,6 +96,19 @@ public sealed partial class FileJournalStore(IOptions<JournalOptions> options) :
         return await ReadAsync(root, path, ct);
     }
 
+    /// <summary>Markdown entries only name people, so a person here is a distinct name from entries' frontmatter.</summary>
+    public async Task<IReadOnlyList<Person>> FindPeopleAsync(string userId, string? query, CancellationToken ct = default)
+    {
+        var entries = await SearchAsync(userId, new JournalQuery(Person: query?.Trim(), Limit: int.MaxValue), ct);
+
+        return [.. entries
+            .SelectMany(e => e.People.Select(name => (Name: name, e.Date)))
+            .Where(x => string.IsNullOrWhiteSpace(query) || x.Name.Contains(query.Trim(), StringComparison.OrdinalIgnoreCase))
+            .GroupBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
+            .Select(g => new Person(g.First().Name, g.Max(x => x.Date), g.Count()))
+            .OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase)];
+    }
+
     private string EntriesRoot(string userId) => Path.Combine(_root, userId, "entries");
 
     private static bool Matches(JournalEntry e, JournalQuery q)

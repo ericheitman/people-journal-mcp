@@ -45,10 +45,43 @@ public sealed record JournalQuery(
     DateOnly? Since = null,
     int Limit = 10);
 
+/// <summary>
+/// A person in the journal. The markdown store only knows names from entries, so everything
+/// beyond Name, LastEntry and EntryCount is optional and filled only by stores that keep it.
+/// </summary>
+public sealed record Person(
+    string Name,
+    DateOnly? LastEntry,
+    int EntryCount,
+    string? Id = null,
+    string? Title = null,
+    string? Relationship = null,
+    bool KeyPerson = false,
+    IReadOnlyDictionary<string, string>? Notes = null,
+    string? LinkedInUrl = null,
+    LinkedInProfile? LinkedIn = null,
+    IReadOnlyList<Commitment>? OpenCommitments = null);
+
+/// <summary>Facts the user pasted from a LinkedIn profile (never fetched). Roles are "Title, Company (start–end)".</summary>
+public sealed record LinkedInProfile(
+    string Headline,
+    string Location,
+    string About,
+    IReadOnlyList<string> Experience,
+    IReadOnlyList<string> Education,
+    IReadOnlyList<string> Skills,
+    DateOnly? ImportedOn);
+
+/// <summary>Direction is "i-owe" or "owed-to-me".</summary>
+public sealed record Commitment(string Text, string Direction, DateOnly? Due);
+
 public interface IJournalStore
 {
     /// <summary>Entry types this store accepts.</summary>
     IReadOnlyList<string> SupportedTypes { get; }
+
+    /// <summary>People whose name, id or title contains <paramref name="query"/> (all people when null), by name.</summary>
+    Task<IReadOnlyList<Person>> FindPeopleAsync(string userId, string? query, CancellationToken ct = default);
 
     Task<JournalEntry> AddAsync(string userId, NewJournalEntry entry, CancellationToken ct = default);
     Task<IReadOnlyList<JournalEntry>> SearchAsync(string userId, JournalQuery query, CancellationToken ct = default);

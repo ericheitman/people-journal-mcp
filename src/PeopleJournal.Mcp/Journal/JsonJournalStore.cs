@@ -113,6 +113,106 @@ public sealed class JsonJournalStore(IOptions<JournalOptions> options, ILogger<J
         return node is null ? null : ToEntry(node, people);
     }
 
+    // The UI's four free-text fields about a person, with the labels it shows.
+    private static readonly (string Key, string Label)[] NoteFields =
+    [
+        ("caresAbout", "Cares about"),
+        ("frustrations", "Frustrations"),
+        ("howTheyLikeInfo", "How they like info"),
+        ("successForMe", "What success looks like for me"),
+    ];
+
+    public async Task<IReadOnlyList<Person>> FindPeopleAsync(string userId, string? query, CancellationToken ct = default)
+    {
+        var path = JournalPath(userId);
+        if (!File.Exists(path))
+        {
+            return [];
+        }
+
+        var (journal, _) = await LoadAsync(path, ct);
+        var entries = (journal["entries"]?.AsArray() ?? []).OfType<JsonObject>().ToList();
+        var commitments = (journal["commitments"]?.AsArray() ?? []).OfType<JsonObject>().ToList();
+        var q = query?.Trim() ?? "";
+
+        return [.. (journal["people"]?.AsArray() ?? [])
+            .OfType<JsonObject>()
+            .Where(p => q.Length == 0
+                || new[] { (string?)p["id"], (string?)p["name"], (string?)p["title"] }
+                    .Any(v => v?.Contains(q, StringComparison.OrdinalIgnoreCase) == true))
+            .Select(p => ToPerson(p, entries, commitments))
+            .OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase)];
+    }
+
+    private static Person ToPerson(JsonObject p, List<JsonObject> entries, List<JsonObject> commitments)
+    {
+        var id = (string?)p["id"] ?? "";
+        var theirs = entries
+            .Where(e => (e["people"]?.AsArray() ?? []).Any(x => (string?)x == id))
+            .Select(e => DateOnly.TryParse((string?)e["date"], CultureInfo.InvariantCulture, out var d) ? d : (DateOnly?)null)
+            .ToList();
+
+        var notes = NoteFields
+            .Select(f => (f.Label, Value: ((string?)p[f.Key])?.Trim() ?? ""))
+            .Where(f => f.Value.Length > 0)
+            .ToDictionary(f => f.Label, f => f.Value);
+
+        var open = commitments
+            .Where(c => (string?)c["person"] == id && c["done"]?.GetValue<bool>() != true)
+            .Select(c => new Commitment(
+                (string?)c["text"] ?? "",
+                (string?)c["direction"] ?? "i-owe",
+                DateOnly.TryParse((string?)c["due"], CultureInfo.InvariantCulture, out var due) ? due : null))
+            .OrderBy(c => c.Due ?? DateOnly.MaxValue)
+            .ToList();
+
+        return new Person(
+            (string?)p["name"] ?? id,
+            theirs.Max(),
+            theirs.Count,
+            id,
+            NullIfBlank((string?)p["title"]),
+            NullIfBlank((string?)p["relationship"]),
+            p["keyPerson"]?.GetValue<bool>() == true,
+            notes,
+            NullIfBlank((string?)p["linkedin"]),
+            p["linkedinProfile"] is JsonObject li ? ToLinkedIn(li) : null,
+            open);
+    }
+
+    private static LinkedInProfile ToLinkedIn(JsonObject li)
+    {
+        static string S(JsonNode? n) => ((string?)n)?.Trim() ?? "";
+        static IEnumerable<JsonObject> Items(JsonNode? n) => (n as JsonArray ?? []).OfType<JsonObject>();
+
+        var experience = Items(li["experience"])
+            .Select(x =>
+            {
+                var role = string.Join(", ", new[] { S(x["title"]), S(x["company"]) }.Where(v => v.Length > 0));
+                var (start, end) = (S(x["start"]), S(x["end"]));
+                var dates = start.Length == 0 && end.Length == 0 ? "" : $" ({start}–{(end.Length == 0 ? "present" : end)})";
+                return role + dates;
+            })
+            .Where(r => r.Length > 0)
+            .ToList();
+
+        var education = Items(li["education"])
+            .Select(x => string.Join(", ", new[] { S(x["school"]), S(x["degree"]) }.Where(v => v.Length > 0)))
+            .Where(e => e.Length > 0)
+            .ToList();
+
+        return new LinkedInProfile(
+            S(li["headline"]),
+            S(li["location"]),
+            S(li["about"]),
+            experience,
+            education,
+            [.. (li["skills"] as JsonArray ?? []).Select(S).Where(s => s.Length > 0)],
+            DateOnly.TryParse(S(li["importedOn"]), CultureInfo.InvariantCulture, out var d) ? d : null);
+    }
+
+    private static string? NullIfBlank(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
     private string JournalPath(string userId)
     {
         var path = Path.GetFullPath(Path.Combine(_root, userId, "journal.json"));
