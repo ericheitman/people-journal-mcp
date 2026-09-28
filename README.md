@@ -5,6 +5,43 @@ ways (`Journal:Store`): plain markdown files with YAML frontmatter (`Markdown`, 
 `dotnet run`), or a companion UI's single `journal.json` (`Json`, used by Docker Compose).
 The server is written in C# on ASP.NET Core with the official MCP C# SDK.
 
+## How it works
+
+```mermaid
+flowchart LR
+    subgraph clients["MCP clients"]
+        cc["Claude Code<br/>+ /people-journal-mcp:* commands"]
+        cd["Claude Desktop<br/>via mcp-remote"]
+        insp["MCP Inspector"]
+        web["Claude on the web<br/>(step 5)"]
+    end
+
+    subgraph server["People Journal MCP server, 127.0.0.1:5191/mcp"]
+        auth{"Auth:Mode"}
+        who["Resolve user id<br/>never a tool argument"]
+        tools["Tools<br/>add, search, get entry,<br/>get people"]
+        store{"Journal:Store"}
+    end
+
+    md[("Markdown<br/>{root}/{user}/entries/yyyy/MM/*.md")]
+    json[("Json<br/>{root}/{user}/journal.json")]
+    ui["Companion journal UI<br/>and its slash commands"]
+
+    cc --> auth
+    cd --> auth
+    insp --> auth
+    web --> auth
+    auth -- "None: Auth:DevUserId" --> who
+    auth -- "EntraId: token's oid claim" --> who
+    who --> tools --> store
+    store -- "Markdown" --> md
+    store -- "Json" --> json
+    ui <--> json
+```
+
+The user id comes from the request, not from the model, so a tool call can't choose whose journal to use.
+In `Json` mode the server shares `journal.json` with a companion UI, so it follows the same save rule:
+
 ## Run it locally (Docker)
 
 ```bash
@@ -20,6 +57,20 @@ JOURNAL_PATH=~/my-journal-data docker compose up
 ```
 
 Without Docker: `cd src/PeopleJournal.Mcp && dotnet run --urls http://localhost:5191`.
+
+```mermaid
+flowchart TD
+    add(["journal_add_entry"]) --> load["Reload journal.json<br/>and note its last-modified time"]
+    load --> build["Match people names to ids,<br/>pick a tag, assign e-yyyyMMdd-N,<br/>processed: false"]
+    build --> changed{"File changed<br/>since the reload?"}
+    changed -- "no" --> backup["Copy to journal.backup.json"] --> write["Write journal.json in place"] --> ok(["Return the entry id"])
+    changed -- "yes" --> tries{"Tried 3 times?"}
+    tries -- "no" --> load
+    tries -- "yes" --> fail(["Error: try again in a moment"])
+```
+
+Names it can't match are kept at the end of the text ("People not yet in the journal: ..."), and tags outside
+`business/org/tech/politics` as "Topics: ...", so nothing the caller sent is lost.
 
 ## Connect a client
 
@@ -65,9 +116,9 @@ Tag each step as it lands (`git tag step-3-resources`) so learners can check out
 | Step | What it adds | Status |
 | --- | --- | --- |
 | 1. Hello | One tool, MCP Inspector connected | Done (folded into step 2) |
-| 2. Journal | `journal_add_entry`, `journal_search_entries`, `journal_get_entry`; markdown or `journal.json` storage | Done |
-| 3. Resources | Plan and people exposed as MCP resources | Planned |
-| 4. Prompts | `prep_1on1` and `weekly_review` prompts | Planned |
+| 2. Journal | `journal_add_entry`, `journal_search_entries`, `journal_get_entry`, `journal_get_people`; markdown or `journal.json` storage | Done |
+| 3. Resources | Plan and people exposed as MCP resources (people are already readable through `journal_get_people`) | Planned |
+| 4. Prompts | `prep_1on1` and `weekly_review` prompts, so the workflows work in any client (`/people-journal-mcp:prep` covers Claude Code today) | Planned |
 | 5. Remote | Entra ID auth, public HTTPS, Claude on the web | Planned (outline below) |
 
 ## Step 5 outline: Entra ID
@@ -94,6 +145,26 @@ clear which app a command comes from. It expects the MCP server registered as `p
 | `/people-journal-mcp:learn <what I learned>` | Saves a `learning` entry and points out related past entries |
 | `/people-journal-mcp:prep <name or role>` | One-screen brief before meeting someone: who they are, notes, history, open commitments and questions worth asking (uses `journal_get_people`) |
 
+### How `/people-journal-mcp:prep` works
+
+```mermaid
+flowchart TD
+    start(["/people-journal-mcp:prep Dana"]) --> get["journal_get_people name=Dana"]
+    get --> match{"Who matches?"}
+    match -- "nobody" --> list["journal_get_people with no name,<br/>list the closest names"]
+    match -- "several" --> ask["Ask which one"]
+    match -- "one" --> read["journal_get_entry for<br/>their latest 3-5 entries"]
+    read --> first{"Any entries yet?"}
+    first -- "no" --> fm["Say it's a first meeting:<br/>questions to listen and learn"]
+    first -- "yes" --> brief
+    fm --> brief(["One-screen brief:<br/>who, background, what I know,<br/>history, open commitments (overdue first),<br/>3-5 questions aimed at the gaps"])
+```
+
+It uses only what the journal says. A companion app can build on it; the director-journal app's
+`/director-journal:prep` runs this command, then adds its own coaching layer.
+
+### Install and update
+
 ```bash
 claude plugin marketplace add /path/to/people-journal-mcp
 claude plugin install people-journal-mcp@people-journal-mcp
@@ -102,3 +173,21 @@ claude plugin install people-journal-mcp@people-journal-mcp
 The installed copy is versioned by git commit. After editing a command, commit it, then run
 `claude plugin marketplace update people-journal-mcp` and
 `claude plugin update people-journal-mcp@people-journal-mcp`, then start a new session.
+
+## Changing the server
+
+```mermaid
+flowchart TD
+    change(["A change"]) --> kind{"What changed?"}
+    kind -- "Server code" --> code["src/PeopleJournal.Mcp"]
+    kind -- "A slash command" --> cmd["plugin/commands/*.md"]
+    code --> test["dotnet run against sample-journal<br/>(Markdown, and Journal__Store=Json)<br/>try the tool in MCP Inspector"]
+    test --> readme
+    cmd --> readme["Update this README<br/>(tools table, commands, charts)"]
+    readme --> commit["Commit"]
+    commit --> which{"What changed?"}
+    which -- "Server code" --> safe["Copy the real journal.json somewhere safe"] --> rebuild["JOURNAL_PATH=... docker compose up -d --build<br/>curl localhost:5191/health"]
+    which -- "A slash command" --> plug["claude plugin marketplace update people-journal-mcp<br/>claude plugin update people-journal-mcp@people-journal-mcp"]
+    rebuild --> session(["Start a new Claude session<br/>to pick up new tools or commands"])
+    plug --> session
+```
