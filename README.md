@@ -7,6 +7,24 @@ The server is written in C# on ASP.NET Core with the official MCP C# SDK.
 
 ## How it works
 
+From the user's side: you talk to Claude, Claude picks a tool, and the server reads or writes your journal.
+
+```mermaid
+flowchart TD
+    ask(["You ask Claude about your people,<br/>in any client connected to the server"]) --> pick{"Claude picks a tool"}
+    pick -- "Log my 1:1 with Dana" --> add["journal_add_entry<br/>saves a new entry"]
+    pick -- "What have Dana and I discussed?" --> search["journal_search_entries<br/>short previews, newest first"]
+    search -- "needs the details" --> get["journal_get_entry<br/>one entry's full text"]
+    pick -- "Who is Dana? What do I owe the CFO?" --> people["journal_get_people<br/>notes, commitments, background,<br/>latest entries"]
+    add --> server
+    search --> server
+    get --> server
+    people --> server["Server works out whose journal<br/>from the request, then reads or writes it"]
+    server --> reply["Returns short markdown"] --> answer(["Claude answers in its own words,<br/>or confirms the entry id"])
+```
+
+Under the hood:
+
 ```mermaid
 flowchart LR
     subgraph clients["MCP clients"]
@@ -173,21 +191,3 @@ claude plugin install people-journal-mcp@people-journal-mcp
 The installed copy is versioned by git commit. After editing a command, commit it, then run
 `claude plugin marketplace update people-journal-mcp` and
 `claude plugin update people-journal-mcp@people-journal-mcp`, then start a new session.
-
-## Changing the server
-
-```mermaid
-flowchart TD
-    change(["A change"]) --> kind{"What changed?"}
-    kind -- "Server code" --> code["src/PeopleJournal.Mcp"]
-    kind -- "A slash command" --> cmd["plugin/commands/*.md"]
-    code --> test["dotnet run against sample-journal<br/>(Markdown, and Journal__Store=Json)<br/>try the tool in MCP Inspector"]
-    test --> readme
-    cmd --> readme["Update this README<br/>(tools table, commands, charts)"]
-    readme --> commit["Commit"]
-    commit --> which{"What changed?"}
-    which -- "Server code" --> safe["Copy the real journal.json somewhere safe"] --> rebuild["JOURNAL_PATH=... docker compose up -d --build<br/>curl localhost:5191/health"]
-    which -- "A slash command" --> plug["claude plugin marketplace update people-journal-mcp<br/>claude plugin update people-journal-mcp@people-journal-mcp"]
-    rebuild --> session(["Start a new Claude session<br/>to pick up new tools or commands"])
-    plug --> session
-```
