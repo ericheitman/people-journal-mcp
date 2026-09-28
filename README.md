@@ -86,9 +86,13 @@ Never run `Auth:Mode=None` on a public URL.
 
 ## Slash commands (plugin)
 
-`plugin/` is a Claude Code plugin with a `/people-journal-mcp:learn` command. The plugin name is
-the prefix, so it's always clear which app a command comes from. It expects the MCP server
-registered as `people-journal`.
+`plugin/` is a Claude Code plugin with two commands. The plugin name is the prefix, so it's always
+clear which app a command comes from. It expects the MCP server registered as `people-journal`.
+
+| Command | Does |
+| --- | --- |
+| `/people-journal-mcp:learn <what I learned>` | Saves a `learning` entry and points out related past entries |
+| `/people-journal-mcp:prep <name or role>` | One-screen brief before meeting someone: who they are, notes, history, open commitments and questions worth asking (uses `journal_get_people`) |
 
 ```bash
 claude plugin marketplace add /path/to/people-journal-mcp

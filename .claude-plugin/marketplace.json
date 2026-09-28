@@ -5,7 +5,7 @@
     {
       "name": "people-journal-mcp",
       "source": "./plugin",
-      "description": "Slash commands for the People Journal MCP server, e.g. /people-journal-mcp:learn"
+      "description": "Slash commands for the People Journal MCP server, e.g. /people-journal-mcp:learn and /people-journal-mcp:prep"
     }
   ]
 }
