@@ -106,7 +106,7 @@ public sealed class JournalTools(IJournalStore store, IUserContextResolver users
     [McpServerTool(Name = "journal_get_people", Title = "Get people", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("""
         Get what the user's journal knows about people. With 'name', returns each matching person's
-        full record: title, relationship, notes (what they care about, frustrations, how they like
+        full record: title, relationship, phone and email, notes (what they care about, frustrations, how they like
         information), open commitments either way, pasted LinkedIn background, and their latest entries.
         Without 'name', lists everyone in the journal with a one-line summary.
         Use this before a meeting with someone, or for "who is Dana?" / "what do I owe the CFO?".
@@ -162,6 +162,8 @@ public sealed class JournalTools(IJournalStore store, IUserContextResolver users
         var header = new[] { p.Title, p.Relationship, p.KeyPerson ? "key person" : null }.OfType<string>().ToList();
         if (header.Count > 0) sb.AppendLine(string.Join(" · ", header));
         if (p.Id is not null) sb.AppendLine($"id: `{p.Id}`");
+        if (p.Phone is not null) sb.AppendLine($"Phone: {p.Phone}");
+        if (p.Email is not null) sb.AppendLine($"Email: {p.Email}");
         if (p.LinkedInUrl is not null) sb.AppendLine($"LinkedIn: {p.LinkedInUrl}");
 
         if (p.Notes is { Count: > 0 } notes)

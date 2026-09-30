@@ -60,7 +60,9 @@ public sealed record Person(
     IReadOnlyDictionary<string, string>? Notes = null,
     string? LinkedInUrl = null,
     LinkedInProfile? LinkedIn = null,
-    IReadOnlyList<Commitment>? OpenCommitments = null);
+    IReadOnlyList<Commitment>? OpenCommitments = null,
+    string? Phone = null,
+    string? Email = null);
 
 /// <summary>Facts the user pasted from a LinkedIn profile (never fetched). Roles are "Title, Company (start–end)".</summary>
 public sealed record LinkedInProfile(

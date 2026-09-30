@@ -15,6 +15,8 @@
       "title": "CFO",
       "relationship": "exec",
       "keyPerson": true,
+      "phone": "(555) 010-2030",
+      "email": "dana.whitfield@example.com",
       "caresAbout": "",
       "frustrations": "",
       "howTheyLikeInfo": "Numbers first, story second",

@@ -177,7 +177,9 @@ public sealed class JsonJournalStore(IOptions<JournalOptions> options, ILogger<J
             notes,
             NullIfBlank((string?)p["linkedin"]),
             p["linkedinProfile"] is JsonObject li ? ToLinkedIn(li) : null,
-            open);
+            open,
+            NullIfBlank((string?)p["phone"]),
+            NullIfBlank((string?)p["email"]));
     }
 
     private static LinkedInProfile ToLinkedIn(JsonObject li)
