@@ -12,3 +12,6 @@ sample-journal/*/journal.backup.json
 sample-journal/*
 !sample-journal/local-dev/
 sample-journal/*/entries/
+
+# Local settings for docker compose (e.g. JOURNAL_PATH to your own journal)
+.env
